@@ -330,7 +330,34 @@ function setupMenu() {
   const menuButton = document.querySelector("[data-menu]");
   const nav = document.querySelector(".main-nav");
   if (!menuButton || !nav) return;
-  menuButton.addEventListener("click", () => nav.classList.toggle("open"));
+
+  if (!nav.querySelector(".mobile-menu-actions")) {
+    const actions = document.createElement("div");
+    actions.className = "mobile-menu-actions";
+    actions.innerHTML = `
+      <button type="button" data-open-search>Search</button>
+      <a href="account.html">Account</a>
+      <a href="wishlist.html">Wishlist</a>
+      <a href="cart.html">Bag</a>
+      <a href="admin.html">Admin</a>
+    `;
+    nav.append(actions);
+  }
+
+  menuButton.setAttribute("aria-expanded", "false");
+  menuButton.addEventListener("click", () => {
+    const isOpen = nav.classList.toggle("open");
+    menuButton.setAttribute("aria-expanded", String(isOpen));
+    menuButton.textContent = isOpen ? "×" : "☰";
+  });
+
+  nav.querySelectorAll("a, [data-open-search]").forEach((link) => {
+    link.addEventListener("click", () => {
+      nav.classList.remove("open");
+      menuButton.setAttribute("aria-expanded", "false");
+      menuButton.textContent = "☰";
+    });
+  });
 }
 
 function setupCarousel() {

@@ -664,6 +664,10 @@ textarea {
   display: none;
 }
 
+.mobile-menu-actions {
+  display: none;
+}
+
 .search-overlay {
   align-items: start;
   background: rgba(13, 9, 6, 0.72);
@@ -814,6 +818,7 @@ textarea {
 @media (max-width: 920px) {
   .site-header {
     grid-template-columns: 1fr auto;
+    padding: 22px 5vw;
   }
 
   .main-nav {
@@ -823,17 +828,55 @@ textarea {
   .main-nav.open {
     align-items: flex-start;
     background: var(--espresso);
+    border: 1px solid var(--white-line);
     display: flex;
     flex-direction: column;
+    gap: 0;
     left: 5vw;
-    padding: 22px;
+    padding: 8px 22px 20px;
     position: absolute;
     right: 5vw;
-    top: 88px;
+    top: calc(100% - 12px);
+    z-index: 30;
   }
 
   .mobile-only {
     display: inline-grid;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  .header-actions .search-trigger,
+  .header-actions .icon-link:not(.mobile-only) {
+    display: none;
+  }
+
+  .mobile-menu-actions {
+    border-top: 1px solid var(--white-line);
+    display: grid;
+    gap: 0;
+    margin-top: 10px;
+    padding-top: 10px;
+    width: 100%;
+  }
+
+  .main-nav.open a,
+  .mobile-menu-actions button,
+  .mobile-menu-actions a {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--white-line);
+    color: var(--ivory);
+    display: flex;
+    font-size: 12px;
+    height: 46px;
+    justify-content: flex-start;
+    letter-spacing: 0.18em;
+    padding: 0;
+    width: 100%;
   }
 
   .hero-grid,
