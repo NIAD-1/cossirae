@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin | Cossirae</title>
+    <meta name="description" content="Cossirae admin dashboard for products, catalogue, media, orders and analytics.">
+    <meta name="robots" content="noindex,nofollow">
+    <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/styles.css">
+  </head>
+  <body class="admin-body">
+    <aside class="admin-sidebar">
+      <a class="brand" href="index.html">Cossirae<span>Admin Studio</span></a>
+      <nav class="admin-nav" aria-label="Admin navigation">
+        <button type="button" class="active" data-admin-tab="overview">Overview</button>
+        <button type="button" data-admin-tab="products">Products</button>
+        <button type="button" data-admin-tab="catalogue">Catalogue</button>
+        <button type="button" data-admin-tab="orders">Orders</button>
+        <button type="button" data-admin-tab="categories">Categories</button>
+        <button type="button" data-admin-tab="analytics">Analytics</button>
+        <button type="button" data-admin-tab="monitoring">Monitoring</button>
+      </nav>
+      <a class="button" href="shop.html">View Store →</a>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div>
+          <p class="label">Cossirae Control Room</p>
+          <h1>Admin Dashboard</h1>
+        </div>
+        <form class="admin-auth" data-admin-auth>
+          <input name="email" type="email" placeholder="Admin email">
+          <input name="password" type="password" placeholder="Password">
+          <button class="dark" type="submit">Sign In</button>
+        </form>
+      </header>
+
+      <section class="admin-section active" data-admin-section="overview">
+        <div class="admin-stat-grid">
+          <article><span>Total Products</span><strong data-stat-products>0</strong></article>
+          <article><span>Orders</span><strong data-stat-orders>0</strong></article>
+          <article><span>Revenue</span><strong data-stat-revenue>₦0</strong></article>
+          <article><span>Low Stock</span><strong data-stat-low-stock>0</strong></article>
+        </div>
+        <div class="admin-two-col">
+          <section class="admin-panel">
+            <h2>Recent Orders</h2>
+            <div data-admin-recent-orders></div>
+          </section>
+          <section class="admin-panel">
+            <h2>Stock Watch</h2>
+            <div data-admin-stock-watch></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="admin-section" data-admin-section="products">
+        <div class="admin-panel">
+          <div class="admin-panel-head">
+            <div>
+              <p class="label">Create or Update</p>
+              <h2>Product Editor</h2>
+            </div>
+            <button type="button" data-admin-reset-product>New Product</button>
+          </div>
+          <form class="admin-product-form" data-admin-product-form>
+            <input type="hidden" name="editing_slug">
+            <label>Product Name<input name="name" required placeholder="Abeni Maxi Dress"></label>
+            <label>Slug<input name="slug" required placeholder="abeni-maxi-dress"></label>
+            <label>Category<select name="category" required data-admin-category-select></select></label>
+            <label>Price in Naira<input name="price" type="number" min="0" required placeholder="85000"></label>
+            <label>Stock Quantity<input name="stock" type="number" min="0" required placeholder="12"></label>
+            <label>Sizes<input name="sizes" placeholder="S, M, L, XL"></label>
+            <label>Colours<input name="colours" placeholder="Rust Print, Black, Olive"></label>
+            <label>Status<select name="is_active"><option value="true">Published</option><option value="false">Hidden</option></select></label>
+            <label>Featured<select name="is_featured"><option value="false">No</option><option value="true">Yes</option></select></label>
+            <label class="full">Description<textarea name="description" required placeholder="Describe the fit, fabric, mood and occasion."></textarea></label>
+            <label class="full">Fabric and Care<textarea name="fabric_and_care" placeholder="Cotton blend. Hand wash cold. Hang dry."></textarea></label>
+            <label class="full">Image Uploads<input name="image_files" type="file" accept="image/*" multiple></label>
+            <label class="full">Image URLs<textarea name="image_urls" placeholder="https://...jpg, assets/images/product-name.jpg"></textarea></label>
+            <label class="full">Video Uploads<input name="video_files" type="file" accept="video/*" multiple></label>
+            <label class="full">Video URLs<textarea name="video_urls" placeholder="https://...mp4, https://youtube.com/..."></textarea></label>
+            <div class="full media-preview" data-admin-media-preview></div>
+            <div class="full admin-actions">
+              <button class="dark" type="submit">Save Product</button>
+              <button type="button" data-admin-delete-product>Delete Current</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="admin-section" data-admin-section="catalogue">
+        <div class="admin-panel">
+          <div class="admin-panel-head">
+            <div>
+              <p class="label">Live Product List</p>
+              <h2>Catalogue</h2>
+            </div>
+            <input data-admin-catalogue-search placeholder="Search catalogue">
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead>
+              <tbody data-admin-catalogue></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section" data-admin-section="orders">
+        <div class="admin-panel">
+          <div class="admin-panel-head">
+            <div>
+              <p class="label">Customer Orders</p>
+              <h2>Orders</h2>
+            </div>
+            <select data-admin-order-filter><option value="">All</option><option value="paid">Paid</option><option value="pending">Pending</option><option value="failed">Failed</option></select>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Customer</th><th>Phone</th><th>City</th><th>Total</th><th>Payment</th><th>Status</th></tr></thead>
+              <tbody data-admin-orders></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section" data-admin-section="categories">
+        <div class="admin-two-col">
+          <section class="admin-panel">
+            <h2>Add Category</h2>
+            <form class="admin-category-form" data-admin-category-form>
+              <label>Category Name<input name="name" required placeholder="Dresses"></label>
+              <label>Slug<input name="slug" required placeholder="dresses"></label>
+              <label>Description<textarea name="description" placeholder="Short category note."></textarea></label>
+              <button class="dark" type="submit">Save Category</button>
+            </form>
+          </section>
+          <section class="admin-panel">
+            <h2>Categories</h2>
+            <div data-admin-categories></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="admin-section" data-admin-section="analytics">
+        <div class="admin-panel">
+          <p class="label">Simple Store Analysis</p>
+          <h2>Analytics</h2>
+          <div class="analytics-bars" data-admin-analytics></div>
+        </div>
+      </section>
+
+      <section class="admin-section" data-admin-section="monitoring">
+        <div class="admin-panel">
+          <div class="admin-panel-head">
+            <div>
+              <p class="label">System Events</p>
+              <h2>Monitoring</h2>
+            </div>
+            <button type="button" data-admin-refresh-logs>Refresh Logs</button>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Time</th><th>Level</th><th>Source</th><th>Message</th></tr></thead>
+              <tbody data-admin-logs></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="assets/js/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/js/admin.js"></script>
+  </body>
+</html>

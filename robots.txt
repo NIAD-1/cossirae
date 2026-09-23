@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /product-intake.html
+Disallow: /account.html
+Disallow: /cart.html
+Disallow: /wishlist.html
+
+Sitemap: https://cossirae.ng/sitemap.xml

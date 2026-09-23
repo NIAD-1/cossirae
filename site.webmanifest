@@ -1,0 +1,16 @@
+{
+  "name": "Cossirae",
+  "short_name": "Cossirae",
+  "description": "Contemporary African women's fashion rooted in heritage and designed for now.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4efe5",
+  "theme_color": "#21140d",
+  "icons": [
+    {
+      "src": "/assets/images/favicon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml"
+    }
+  ]
+}
