@@ -40,9 +40,16 @@ function mapProductRow(row) {
     displayPrice: naira.format(row.price_ngn),
     description: row.description || "",
     image: row.image_urls?.[0] || "",
+    images: row.image_urls || [],
     videos: row.video_urls || [],
     sizes: row.sizes || [],
     colours: row.colours || [],
+    garmentType: row.garment_type || "",
+    setIncludes: row.set_includes || "",
+    lengths: row.lengths || [],
+    fit: row.fit || "",
+    fabric: row.fabric || "",
+    specifications: row.specifications || [],
     fabricAndCare: row.fabric_and_care || "",
     url: `product.html?slug=${row.slug}`
   };
@@ -63,9 +70,16 @@ function mergeAdminProducts() {
       displayPrice: naira.format(Number(product.price || 0)),
       description: product.description || "",
       image: product.images?.[0] || "",
+      images: product.images || [],
       videos: product.videos || [],
       sizes: product.sizes || [],
       colours: product.colours || [],
+      garmentType: product.garmentType || "",
+      setIncludes: product.setIncludes || "",
+      lengths: product.lengths || [],
+      fit: product.fit || "",
+      fabric: product.fabric || "",
+      specifications: product.specifications || [],
       fabricAndCare: product.fabricAndCare || "",
       url: `product.html?slug=${product.slug}`
     };
@@ -82,7 +96,7 @@ async function loadProductsFromSupabase() {
   }
   const { data, error } = await cossiraeSupabase
     .from("products")
-    .select("slug,name,category,description,price_ngn,image_urls,video_urls,sizes,colours,fabric_and_care,is_featured")
+    .select("slug,name,category,description,price_ngn,image_urls,video_urls,sizes,colours,garment_type,set_includes,lengths,fit,fabric,specifications,fabric_and_care,is_featured")
     .eq("is_active", true)
     .order("is_featured", { ascending: false });
 
@@ -289,7 +303,7 @@ function renderProductDetail() {
   }
 
   document.title = `${product.name} | Cossirae`;
-  const images = [product.image, ...(product.images || [])].filter(Boolean);
+  const images = [...new Set([product.image, ...(product.images || [])].filter(Boolean))];
   const mainImage = images[0] || "";
   const thumbs = images.length
     ? images.map((image) => `<div class="thumb" style="background-image:url('${image}')"></div>`).join("")
@@ -311,9 +325,15 @@ function renderProductDetail() {
       <p>${product.description}</p>
       <div class="rating">★★★★★ <span class="product-meta">(12 reviews)</span></div>
       <p class="label">Colour: ${colours}</p>
+      ${(product.lengths || []).length ? `<p class="label">Length: ${product.lengths.join(", ")}</p>` : ""}
       <p class="label">Size</p><div class="option-row">${sizes}</div>
       <p><button class="dark" data-add-cart="${product.id}">Add to Bag</button> <button type="button" data-product-wishlist="${product.id}">♡</button></p>
-      <div class="details-list"><div><span>Details</span><span>+</span></div><div><span>Size & Fit</span><span>+</span></div><div><span>Care Instructions</span><span>${product.fabricAndCare || "+"}</span></div></div>
+      <div class="details-list">
+        ${product.garmentType || product.setIncludes || product.fabric ? `<div class="product-spec-block"><strong>Product details</strong><p>${[product.garmentType, product.setIncludes, product.fabric].filter(Boolean).join(" · ")}</p></div>` : ""}
+        ${product.fit || product.specifications?.length ? `<div class="product-spec-block"><strong>Fit & specifications</strong>${product.fit ? `<p>${product.fit}</p>` : ""}${(product.specifications || []).map((item) => `<p><b>${item.label}</b>: ${item.value}</p>`).join("")}</div>` : ""}
+        <div class="product-spec-block"><strong>Care instructions</strong><p>${product.fabricAndCare || "Contact us for care details."}</p></div>
+        ${(product.videos || []).length ? `<div class="product-video-list"><strong>Product videos</strong>${product.videos.map((video) => `<video src="${video}" controls playsinline preload="metadata"></video>`).join("")}</div>` : ""}
+      </div>
     </div>`;
 }
 

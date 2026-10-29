@@ -19,6 +19,10 @@ The schema already includes starter Cossirae products and Row Level Security pol
 
 The admin dashboard is `admin.html`. Create an admin user in Supabase Authentication, sign in from the admin page, then manage products and categories there.
 
+The Product Editor supports multiple compressed photos, product videos, garment type, set contents, sizes, colours, lengths, fit, fabric, care instructions and custom specifications. It includes a live product-card preview. To share product entry with the owner, configure Supabase, create their Auth user, grant that user an `admin_roles` row, and send them the deployed `/admin.html` URL. The editor must show the cloud-catalogue notice before products/media will sync across devices. Without Supabase configuration it is a browser-only demo.
+
+If the Supabase project was created before these product fields were added, rerun `supabase/schema.sql` in its SQL Editor to add the new columns before saving products from Product Studio.
+
 ## 1b. Make A User An Admin
 
 After creating an admin user in Supabase Authentication, copy their user id and run:

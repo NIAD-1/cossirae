@@ -69,6 +69,7 @@
             </div>
             <button type="button" data-admin-reset-product>New Product</button>
           </div>
+          <p class="form-note" data-admin-storage-notice></p>
           <form class="admin-product-form" data-admin-product-form>
             <input type="hidden" name="editing_slug">
             <label>Product Name<input name="name" required placeholder="Abeni Maxi Dress"></label>
@@ -78,15 +79,25 @@
             <label>Stock Quantity<input name="stock" type="number" min="0" required placeholder="12"></label>
             <label>Sizes<input name="sizes" placeholder="S, M, L, XL"></label>
             <label>Colours<input name="colours" placeholder="Rust Print, Black, Olive"></label>
+            <label>Garment Type<input name="garment_type" placeholder="Maxi dress, kaftan, co-ord set"></label>
+            <label>Set Includes<input name="set_includes" placeholder="Top and wide-leg trousers"></label>
+            <label>Lengths / Options<input name="lengths" placeholder="Regular, Tall; 52 in, 54 in"></label>
+            <label>Fit<input name="fit" placeholder="Relaxed fit, true to size"></label>
+            <label>Fabric<input name="fabric" placeholder="Cotton, linen blend, aso-oke"></label>
             <label>Status<select name="is_active"><option value="true">Published</option><option value="false">Hidden</option></select></label>
             <label>Featured<select name="is_featured"><option value="false">No</option><option value="true">Yes</option></select></label>
-            <label class="full">Description<textarea name="description" required placeholder="Describe the fit, fabric, mood and occasion."></textarea></label>
-            <label class="full">Fabric and Care<textarea name="fabric_and_care" placeholder="Cotton blend. Hand wash cold. Hang dry."></textarea></label>
-            <label class="full">Image Uploads<input name="image_files" type="file" accept="image/*" multiple></label>
-            <label class="full">Image URLs<textarea name="image_urls" placeholder="https://...jpg, assets/images/product-name.jpg"></textarea></label>
-            <label class="full">Video Uploads<input name="video_files" type="file" accept="video/*" multiple></label>
-            <label class="full">Video URLs<textarea name="video_urls" placeholder="https://...mp4, https://youtube.com/..."></textarea></label>
+            <label class="full">Product Description<textarea name="description" required placeholder="Describe the design, fabric, fit and occasions."></textarea></label>
+            <label class="full">Specifications <span class="form-note">One per line, format: Label: detail</span><textarea name="specifications" placeholder="Fabric: Cotton blend&#10;Closure: Concealed zip&#10;Model wears: Size M"></textarea></label>
+            <label class="full">Care Instructions<textarea name="fabric_and_care" placeholder="Hand wash cold. Do not bleach. Hang to dry."></textarea></label>
+            <label class="full">Product Photos<input name="image_files" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple><span class="form-note">Choose several photos. Images are compressed before upload.</span></label>
+            <label class="full">Photo URLs (optional)<textarea name="image_urls" placeholder="Paste image URLs, one per line"></textarea></label>
+            <label class="full">Product Videos<input name="video_files" type="file" accept="video/mp4,video/webm,video/quicktime" multiple><span class="form-note">MP4, WebM or MOV.</span></label>
+            <label class="full">Video URLs (optional)<textarea name="video_urls" placeholder="Paste video URLs, one per line"></textarea></label>
             <div class="full media-preview" data-admin-media-preview></div>
+            <section class="full product-live-preview" aria-live="polite">
+              <div class="admin-panel-head"><div><p class="label">Live Preview</p><h3>Shop product card</h3></div><span class="product-meta">Updates as you type</span></div>
+              <div data-admin-product-preview></div>
+            </section>
             <div class="full admin-actions">
               <button class="dark" type="submit">Save Product</button>
               <button type="button" data-admin-delete-product>Delete Current</button>

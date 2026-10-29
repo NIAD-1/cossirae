@@ -38,6 +38,12 @@ create table if not exists public.products (
   stock_quantity integer not null default 0 check (stock_quantity >= 0),
   sizes text[] not null default '{}',
   colours text[] not null default '{}',
+  garment_type text not null default '',
+  set_includes text not null default '',
+  lengths text[] not null default '{}',
+  fit text not null default '',
+  fabric text not null default '',
+  specifications jsonb not null default '[]'::jsonb,
   image_urls text[] not null default '{}',
   video_urls text[] not null default '{}',
   fabric_and_care text,
@@ -46,6 +52,13 @@ create table if not exists public.products (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.products add column if not exists garment_type text not null default '';
+alter table public.products add column if not exists set_includes text not null default '';
+alter table public.products add column if not exists lengths text[] not null default '{}';
+alter table public.products add column if not exists fit text not null default '';
+alter table public.products add column if not exists fabric text not null default '';
+alter table public.products add column if not exists specifications jsonb not null default '[]'::jsonb;
 
 create table if not exists public.product_categories (
   id uuid primary key default gen_random_uuid(),

@@ -45,9 +45,10 @@ let adminLogs = [];
 let uploadedImages = [];
 let uploadedVideos = [];
 let adminUserIsAuthorized = !adminSupabase;
+const escapeHtml = (value = "") => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 
 const slugify = (value) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-const listFromText = (value) => value.split(",").map((item) => item.trim()).filter(Boolean);
+const listFromText = (value) => value.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean);
 const boolValue = (value) => value === "true";
 
 function toast(message) {
@@ -107,9 +108,7 @@ async function uploadMediaAssets(slug, assets, folder) {
       upsert: true
     });
     if (error) {
-      toast(`Media upload failed: ${error.message}`);
-      urls.push(asset.url);
-      continue;
+      throw new Error(`Media upload failed: ${error.message}`);
     }
     const { data } = adminSupabase.storage.from(mediaBucket).getPublicUrl(path);
     urls.push(data.publicUrl);
@@ -169,6 +168,12 @@ async function loadAdminData() {
       stock: product.stock_quantity,
       sizes: product.sizes || [],
       colours: product.colours || [],
+      garmentType: product.garment_type || "",
+      setIncludes: product.set_includes || "",
+      lengths: product.lengths || [],
+      fit: product.fit || "",
+      fabric: product.fabric || "",
+      specifications: product.specifications || [],
       images: product.image_urls || [],
       videos: product.video_urls || [],
       fabricAndCare: product.fabric_and_care || "",
@@ -296,6 +301,12 @@ function fillProductForm(slug) {
   fields.stock.value = product.stock || 0;
   fields.sizes.value = (product.sizes || []).join(", ");
   fields.colours.value = (product.colours || []).join(", ");
+  fields.garment_type.value = product.garmentType || "";
+  fields.set_includes.value = product.setIncludes || "";
+  fields.lengths.value = (product.lengths || []).join(", ");
+  fields.fit.value = product.fit || "";
+  fields.fabric.value = product.fabric || "";
+  fields.specifications.value = (product.specifications || []).map((item) => `${item.label}: ${item.value}`).join("\n");
   fields.is_active.value = String(product.isActive !== false);
   fields.is_featured.value = String(Boolean(product.isFeatured));
   fields.description.value = product.description || "";
@@ -310,9 +321,24 @@ function fillProductForm(slug) {
 
 function renderMediaPreview() {
   const target = document.querySelector("[data-admin-media-preview]");
-  const imageNodes = uploadedImages.map((file) => `<img src="${file.url}" alt="">`).join("");
-  const videoNodes = uploadedVideos.map((file) => `<video src="${file.url}" controls></video>`).join("");
+  const imageNodes = uploadedImages.map((file) => `<img src="${escapeHtml(file.url)}" alt="Product photo preview">`).join("");
+  const videoNodes = uploadedVideos.map((file) => `<video src="${escapeHtml(file.url)}" controls playsinline></video>`).join("");
   target.innerHTML = imageNodes + videoNodes || "<p class='form-note'>Selected images and videos will preview here.</p>";
+}
+
+function renderProductPreview(form) {
+  const values = Object.fromEntries(new FormData(form));
+  const imageUrl = uploadedImages[0]?.url || listFromText(values.image_urls || "")[0] || "";
+  const media = imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(values.name || "Product image")}">` : `<div class="product-preview-placeholder">Product photo</div>`;
+  const target = document.querySelector("[data-admin-product-preview]");
+  target.innerHTML = `<article class="product-card preview-product-card">${media}<h3 class="product-name">${escapeHtml(values.name || "Product name")}</h3><div class="price">${adminNaira.format(Number(values.price || 0))}</div><div class="product-meta">${escapeHtml(values.category || "Category")}</div></article>`;
+}
+
+function parseSpecifications(value) {
+  return value.split("\n").map((line) => {
+    const separator = line.indexOf(":");
+    return separator < 1 ? null : { label: line.slice(0, separator).trim(), value: line.slice(separator + 1).trim() };
+  }).filter((item) => item?.label && item?.value);
 }
 
 async function saveProduct(form) {
@@ -322,8 +348,15 @@ async function saveProduct(form) {
   }
   const values = Object.fromEntries(new FormData(form));
   const productSlug = slugify(values.slug || values.name);
-  const uploadedImageUrls = await uploadMediaAssets(productSlug, uploadedImages, "images");
-  const uploadedVideoUrls = await uploadMediaAssets(productSlug, uploadedVideos, "videos");
+  let uploadedImageUrls;
+  let uploadedVideoUrls;
+  try {
+    uploadedImageUrls = await uploadMediaAssets(productSlug, uploadedImages, "images");
+    uploadedVideoUrls = await uploadMediaAssets(productSlug, uploadedVideos, "videos");
+  } catch (error) {
+    toast(error.message);
+    return;
+  }
   const product = {
     slug: productSlug,
     name: values.name,
@@ -332,6 +365,12 @@ async function saveProduct(form) {
     stock: Number(values.stock || 0),
     sizes: listFromText(values.sizes || ""),
     colours: listFromText(values.colours || ""),
+    garmentType: values.garment_type || "",
+    setIncludes: values.set_includes || "",
+    lengths: listFromText(values.lengths || ""),
+    fit: values.fit || "",
+    fabric: values.fabric || "",
+    specifications: parseSpecifications(values.specifications || ""),
     description: values.description,
     fabricAndCare: values.fabric_and_care,
     images: [...uploadedImageUrls, ...listFromText(values.image_urls || "")],
@@ -357,12 +396,21 @@ async function saveProduct(form) {
       stock_quantity: product.stock,
       sizes: product.sizes,
       colours: product.colours,
+      garment_type: product.garmentType,
+      set_includes: product.setIncludes,
+      lengths: product.lengths,
+      fit: product.fit,
+      fabric: product.fabric,
+      specifications: product.specifications,
       image_urls: product.images,
       video_urls: product.videos,
       is_active: product.isActive,
       is_featured: product.isFeatured
     }, { onConflict: "slug" });
-    if (error) toast(`Saved locally. Supabase needs admin sign-in/policy: ${error.message}`);
+    if (error) {
+      toast(`Cloud save failed: ${error.message}`);
+      return;
+    }
     else toast("Product saved to Supabase and local catalogue");
   } else {
     toast("Product saved locally. Add Supabase keys for cloud storage.");
@@ -390,13 +438,23 @@ function setupAdminEvents() {
     if (!fields.editing_slug.value) fields.slug.value = slugify(fields.name.value);
   });
   fields.image_files.addEventListener("change", async () => {
-    uploadedImages = await filesToDataUrls(fields.image_files.files);
+    uploadedImages = [...uploadedImages, ...await filesToDataUrls(fields.image_files.files)];
     renderMediaPreview();
+    renderProductPreview(form);
   });
   fields.video_files.addEventListener("change", async () => {
-    uploadedVideos = await filesToDataUrls(fields.video_files.files);
+    const tooLarge = [...fields.video_files.files].find((file) => file.size > 50 * 1024 * 1024);
+    if (tooLarge) {
+      toast(`${tooLarge.name} is over the 50 MB upload limit`);
+      fields.video_files.value = "";
+      return;
+    }
+    uploadedVideos = [...uploadedVideos, ...await filesToDataUrls(fields.video_files.files)];
     renderMediaPreview();
   });
+  form.addEventListener("input", () => renderProductPreview(form));
+  form.elements.image_urls.addEventListener("input", () => renderProductPreview(form));
+  form.elements.is_active.value = "false";
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     await saveProduct(form);
@@ -476,6 +534,11 @@ async function initAdmin() {
   setupAdminEvents();
   renderAll();
   renderMediaPreview();
+  renderProductPreview(document.querySelector("[data-admin-product-form]"));
+  const notice = document.querySelector("[data-admin-storage-notice]");
+  if (notice) notice.textContent = adminSupabase
+    ? "Cloud catalogue is enabled. Sign in with an approved admin account before saving."
+    : "Demo mode: products and media are saved only in this browser. Configure Supabase before sharing this editor with the owner.";
 }
 
 initAdmin();
