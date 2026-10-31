@@ -25,7 +25,6 @@ const storage = {
 const findProduct = (id) => products.find((product) => product.id === id) || products[0];
 const config = window.COSSIRAE_CONFIG || {};
 const hasSupabaseConfig = Boolean(config.supabaseUrl && config.supabaseAnonKey && !config.supabaseUrl.includes("YOUR_"));
-const hasPaystackConfig = Boolean(config.paystackPublicKey && !config.paystackPublicKey.includes("YOUR_"));
 const cossiraeSupabase = hasSupabaseConfig && window.supabase
   ? window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey)
   : null;
@@ -541,98 +540,48 @@ function setupCartControls() {
   });
 }
 
-async function createOrderInSupabase(formData, cart, total) {
-  if (!cossiraeSupabase) return null;
-
-  const orderId = crypto.randomUUID();
-  const reference = `cossirae-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  const orderPayload = {
-    id: orderId,
-    user_id: currentCustomer?.id || null,
-    customer_name: formData.name,
-    customer_email: formData.email,
-    customer_phone: formData.phone,
-    delivery_address: formData.address,
-    delivery_city: formData.city,
-    payment_method: "paystack",
-    payment_reference: reference,
-    payment_status: "pending",
-    subtotal_ngn: total,
-    total_ngn: total
-  };
-  const itemPayload = cart.map((item) => {
-    const product = findProduct(item.id);
-    return {
-      order_id: orderId,
-      product_slug: product.id,
-      product_name: product.name,
-      quantity: item.quantity,
-      unit_price_ngn: product.price,
-      line_total_ngn: product.price * item.quantity
-    };
+async function createMonnifyCheckout(formData, cart) {
+  if (!cossiraeSupabase) throw new Error("Supabase checkout is not configured");
+  const { data, error } = await cossiraeSupabase.functions.invoke("create-monnify-checkout", {
+    body: {
+      customer: formData,
+      items: cart.map((item) => ({ slug: item.id, quantity: item.quantity }))
+    }
   });
-
-  const { error: orderError } = await cossiraeSupabase.from("orders").insert(orderPayload);
-  if (orderError) throw new Error(orderError.message);
-
-  const { error: itemsError } = await cossiraeSupabase.from("order_items").insert(itemPayload);
-  if (itemsError) throw new Error(itemsError.message);
-
-  return { orderId, reference };
+  if (error) throw new Error(error.message);
+  if (!data?.checkoutUrl) throw new Error(data?.error || "Could not start Monnify checkout");
+  return data;
 }
 
-async function verifyPaystackPayment(reference, orderId) {
-  if (!cossiraeSupabase) return { paid: false };
-  const { data, error } = await cossiraeSupabase.functions.invoke("verify-paystack", {
-    body: { reference, order_id: orderId }
+async function verifyMonnifyPayment(paymentReference, orderId) {
+  const { data, error } = await cossiraeSupabase.functions.invoke("verify-monnify", {
+    body: { payment_reference: paymentReference, order_id: orderId }
   });
   if (error) throw new Error(error.message);
   return data;
 }
 
-function openPaystackCheckout({ email, amount, reference, orderId }) {
-  if (!window.PaystackPop || !hasPaystackConfig) {
-    showToast("Add Paystack public key to enable live payment");
+function setupMonnifyReturn() {
+  const state = document.querySelector("[data-payment-return]");
+  if (!state) return;
+  const params = new URLSearchParams(window.location.search);
+  const orderId = params.get("order_id");
+  const paymentReference = params.get("paymentReference");
+  if (!orderId || !paymentReference || !cossiraeSupabase) {
+    state.innerHTML = `<h1>We are checking your payment</h1><p>If you have just paid, wait a moment and check your email for confirmation.</p><a class="button dark" href="shop.html">Return to shop</a>`;
     return;
   }
 
-  const popup = new window.PaystackPop();
-  popup.newTransaction({
-    key: config.paystackPublicKey,
-    email,
-    amount: amount * 100,
-    currency: config.currency || "NGN",
-    reference,
-    metadata: {
-      custom_fields: [
-        { display_name: "Order ID", variable_name: "order_id", value: orderId }
-      ]
-    },
-    onSuccess: async (transaction) => {
-      try {
-        const result = await verifyPaystackPayment(transaction.reference || reference, orderId);
-        if (result.paid) {
-          await cossiraeSupabase.functions.invoke("send-order-email", {
-            body: {
-              id: orderId,
-              payment_reference: reference,
-              customer_name: document.querySelector('[name="name"]')?.value,
-              customer_email: email,
-              total_ngn: amount,
-              payment_status: "paid"
-            }
-          });
-          saveCart([]);
-          renderCartPage();
-          showToast("Payment confirmed. Order received.");
-        } else {
-          showToast("Payment was not confirmed yet");
-        }
-      } catch (error) {
-        showToast(`Payment made, verification failed: ${error.message}`);
-      }
-    },
-    onCancel: () => showToast("Payment cancelled")
+  state.innerHTML = `<p class="eyebrow">Cossirae Order</p><h1>Confirming payment</h1><p>Please keep this page open while we check your Monnify payment.</p>`;
+  verifyMonnifyPayment(paymentReference, orderId).then((result) => {
+    if (result.paid) {
+      saveCart([]);
+      state.innerHTML = `<p class="eyebrow">Payment received</p><h1>Your order is confirmed.</h1><p>We have sent your order details by email.</p><a class="button dark" href="shop.html">Continue shopping</a>`;
+      return;
+    }
+    state.innerHTML = `<p class="eyebrow">Payment pending</p><h1>We have not confirmed this payment yet.</h1><p>If you completed the transfer or payment, please allow a moment for Monnify to confirm it. We will update your order when confirmation arrives.</p><a class="button dark" href="shop.html">Return to shop</a>`;
+  }).catch(() => {
+    state.innerHTML = `<p class="eyebrow">Payment pending</p><h1>We are still checking your payment.</h1><p>Please do not pay again yet. We will confirm the order by email after Monnify verifies the transaction.</p><a class="button dark" href="shop.html">Return to shop</a>`;
   });
 }
 
@@ -654,13 +603,11 @@ function setupCheckout() {
       return;
     }
     const formData = Object.fromEntries(new FormData(form));
-    const total = cart.reduce((sum, item) => sum + findProduct(item.id).price * item.quantity, 0);
-
-    if (cossiraeSupabase && hasPaystackConfig) {
+    if (cossiraeSupabase) {
       try {
-        showToast("Preparing secure checkout...");
-        const order = await createOrderInSupabase(formData, cart, total);
-        openPaystackCheckout({ email: formData.email, amount: total, reference: order.reference, orderId: order.orderId });
+        showToast("Preparing Monnify checkout...");
+        const checkout = await createMonnifyCheckout(formData, cart);
+        window.location.assign(checkout.checkoutUrl);
       } catch (error) {
         showToast(`Checkout failed: ${error.message}`);
       }
@@ -668,7 +615,7 @@ function setupCheckout() {
     }
 
     storage.set("cossirae_last_order", { createdAt: new Date().toISOString(), items: cart, customer: formData });
-    showToast("Demo order captured. Add Supabase and Paystack keys for live checkout.");
+    showToast("Demo order captured. Connect Supabase and Monnify to accept live payments.");
   });
 }
 
@@ -743,6 +690,7 @@ async function initCossirae() {
   renderCartPage();
   setupCartControls();
   setupCheckout();
+  setupMonnifyReturn();
   updateWishlistButtons();
   updateHeaderCounts();
 }

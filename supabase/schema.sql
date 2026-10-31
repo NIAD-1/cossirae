@@ -87,7 +87,7 @@ create table if not exists public.orders (
   customer_phone text not null,
   delivery_address text not null,
   delivery_city text not null,
-  payment_method text not null default 'paystack',
+  payment_method text not null default 'monnify',
   payment_reference text unique,
   payment_status text not null default 'pending' check (payment_status in ('pending', 'paid', 'failed', 'cancelled')),
   order_status text not null default 'new' check (order_status in ('new', 'processing', 'shipped', 'delivered', 'cancelled')),
@@ -242,14 +242,7 @@ create policy "Customers can read own customer profile"
   using (public.is_admin() or (select auth.uid()) = user_id);
 
 drop policy if exists "Public can create orders" on public.orders;
-create policy "Public can create orders"
-  on public.orders for insert
-  with check (user_id is null or (select auth.uid()) = user_id);
-
 drop policy if exists "Public can create order items" on public.order_items;
-create policy "Public can create order items"
-  on public.order_items for insert
-  with check (true);
 
 drop policy if exists "Admins and order owners can read order items" on public.order_items;
 create policy "Admins and order owners can read order items"

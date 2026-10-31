@@ -24,12 +24,12 @@ The Journal page is intentionally left out for now.
 - Cart quantity controls
 - Browser-based wishlist
 - Supabase-ready product/order/form storage
-- Paystack-ready checkout flow
+- Monnify-hosted checkout with server-side order creation and payment verification
 - Admin dashboard for catalogue, orders and analytics
 - Product image/video fields with local previews
 - Supabase Storage-ready product media uploads
 - Customer account sign up/sign in
-- Paystack webhook function for payment verification
+- Monnify webhook function with signed production notifications
 - Email function scaffold for order notifications
 - Logging function and app log table
 - Admin monitoring tab for recent system logs
@@ -44,9 +44,9 @@ The Journal page is intentionally left out for now.
 - SVG favicon
 - Mobile navigation
 
-This is still a static front-end build, but it now has a Supabase + Paystack integration path. Cart and wishlist stay in the visitor's browser. Products, orders, product submissions and newsletter subscribers can save to Supabase after you add your keys.
+This is still a static front-end build, backed by Supabase Edge Functions and Monnify for checkout. Cart and wishlist stay in the visitor's browser. Products, orders, product submissions and newsletter subscribers can save to Supabase after setup.
 
-See `SUPABASE_PAYSTACK_SETUP.md` for the database and payment setup.
+See `SUPABASE_MONNIFY_SETUP.md` for database, payment and auth redirect setup.
 
 ## Admin Dashboard
 
@@ -72,7 +72,7 @@ For live admin access, create a Supabase Auth user and add their user id to `pub
 - Customer-owned order policies
 - Admin-only product/category/order policies
 - Supabase Storage bucket and media policies for `product-media`
-- Paystack webhook function with signature verification
+- Monnify webhook function with signature verification
 - Order email function scaffold using Resend
 - Browser and webhook logging into `app_logs`
 - Cache headers for static assets and HTML

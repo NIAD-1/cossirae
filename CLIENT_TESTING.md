@@ -29,15 +29,15 @@ Preview URL on this machine:
 - Manage categories locally
 - View demo orders and analytics
 
-## What Needs Supabase/Paystack Before Live Production
+## What Needs Supabase/Monnify Before Live Production
 
 - Real customer login
 - Real admin login and admin roles
 - Permanent product image/video upload
 - Cloud product database
 - Real orders
-- Paystack payments
-- Paystack webhook verification
+- Monnify merchant credentials in Supabase Edge Function secrets
+- Monnify checkout and webhook deployment
 - Order confirmation emails
 - Live monitoring logs
 

@@ -51,13 +51,13 @@ After deployment:
 The frontend can go live on Vercel now, but real commerce needs:
 
 - Supabase project URL and anon key in `assets/js/config.js`
-- Paystack public key in `assets/js/config.js`
+- Monnify API key, client secret and contract code stored as Supabase Edge Function secrets
 - Supabase SQL schema installed
 - Supabase Edge Functions deployed
-- Paystack webhook URL configured
+- Monnify webhook URL configured
 - Resend/email secrets added to Supabase
 
-Do not put Paystack secret keys or Supabase service-role keys in frontend files.
+Do not put Monnify client secrets or Supabase service-role keys in frontend files. See `SUPABASE_MONNIFY_SETUP.md` for the full setup.
 
 ## Vercel Config Included
 
