@@ -133,22 +133,37 @@ function saveLocalCategories(categories) {
 }
 
 async function loadAdminData() {
-  adminCategories = localCategories();
-  adminProducts = localProducts();
-  if (!adminProducts.length) {
-    adminProducts = starterProducts;
-    saveLocalProducts(adminProducts);
+  if (!adminSupabase) {
+    adminCategories = localCategories();
+    adminProducts = localProducts();
+    if (!adminProducts.length) {
+      adminProducts = starterProducts;
+      saveLocalProducts(adminProducts);
+    }
+    adminOrders = adminStore.get("cossirae_admin_orders", starterOrders);
+    adminUserIsAuthorized = true;
+    updateAdminSessionUI();
+    return;
   }
-  adminOrders = adminStore.get("cossirae_admin_orders", starterOrders);
 
-  if (!adminSupabase) return;
+  adminCategories = [];
+  adminProducts = [];
+  adminOrders = [];
+  adminLogs = [];
 
   const { data: sessionData } = await adminSupabase.auth.getSession();
-  const userId = sessionData.session?.user?.id;
-  if (userId) {
-    const { data: role } = await adminSupabase.from("admin_roles").select("role").eq("user_id", userId).maybeSingle();
-    adminUserIsAuthorized = Boolean(role);
+  const session = sessionData.session;
+  const userId = session?.user?.id;
+  if (!userId) {
+    adminUserIsAuthorized = false;
+    updateAdminSessionUI(null);
+    return;
   }
+
+  const { data: role, error: roleError } = await adminSupabase.from("admin_roles").select("role").eq("user_id", userId).maybeSingle();
+  adminUserIsAuthorized = Boolean(role && !roleError);
+  updateAdminSessionUI(session.user);
+  if (!adminUserIsAuthorized) return;
 
   const [{ data: products }, { data: categories }, { data: orders }, { data: logs }] = await Promise.all([
     adminSupabase.from("products").select("*").order("created_at", { ascending: false }),
@@ -183,6 +198,22 @@ async function loadAdminData() {
   }
   if (orders?.length) adminOrders = orders;
   if (logs?.length) adminLogs = logs;
+}
+
+function updateAdminSessionUI(user = null) {
+  const form = document.querySelector("[data-admin-auth]");
+  const sessionPanel = document.querySelector("[data-admin-session]");
+  const label = document.querySelector("[data-admin-session-label]");
+  if (!form || !sessionPanel || !label) return;
+
+  const signedIn = Boolean(user);
+  form.hidden = signedIn;
+  sessionPanel.hidden = !signedIn;
+  label.textContent = signedIn
+    ? adminUserIsAuthorized
+      ? `Signed in as ${user.email || "admin"}`
+      : `Signed in as ${user.email || "user"} · Admin access not assigned`
+    : "";
 }
 
 function renderStats() {
@@ -521,11 +552,25 @@ function setupAdminEvents() {
     const { error } = await adminSupabase.auth.signInWithPassword(values);
     if (error) toast(error.message);
     else {
-      toast("Admin signed in");
       await loadAdminData();
       renderAll();
-      if (!adminUserIsAuthorized) toast("This account is not in admin_roles yet");
+      event.currentTarget.reset();
+      if (adminUserIsAuthorized) toast("Admin signed in");
+      else toast("Signed in, but this account has no admin role");
     }
+  });
+
+  document.querySelector("[data-admin-signout]").addEventListener("click", async () => {
+    if (!adminSupabase) return;
+    const { error } = await adminSupabase.auth.signOut();
+    if (error) {
+      toast(`Could not sign out: ${error.message}`);
+      return;
+    }
+    adminUserIsAuthorized = false;
+    await loadAdminData();
+    renderAll();
+    toast("Signed out");
   });
 }
 

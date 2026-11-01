@@ -1037,6 +1037,23 @@ textarea {
   grid-template-columns: 180px 180px auto;
 }
 
+.admin-auth[hidden],
+.admin-session[hidden] {
+  display: none;
+}
+
+.admin-session {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  justify-content: flex-end;
+}
+
+.admin-session span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .admin-section {
   display: none;
 }
